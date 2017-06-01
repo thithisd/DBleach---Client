@@ -47,7 +47,7 @@ local function onCharacterList(protocol, characters, account, otui)
   if enterGame:getChildById('rememberPasswordBox'):isChecked() then
     local account = g_crypt.encrypt(G.account)
     local password = g_crypt.encrypt(G.password)
-
+    
     g_settings.set('account', account)
     g_settings.set('password', password)
 
@@ -119,27 +119,21 @@ function EnterGame.init()
   local stayLogged = g_settings.getBoolean('staylogged')
   local autologin = g_settings.getBoolean('autologin')
   local clientVersion = g_settings.getInteger('client-version')
-  if clientVersion == 0 then clientVersion = 1074 end
-
+  local serverChoice = enterGame:getChildById('serverComboBox')
+  serverChoice:addOption("Dbleach")
+  if clientVersion == 0 then clientVersion = 860 end
   if port == nil or port == 0 then port = 7171 end
 
   EnterGame.setAccountName(account)
   EnterGame.setPassword(password)
 
-  enterGame:getChildById('serverHostTextEdit'):setText(host)
-  enterGame:getChildById('serverPortTextEdit'):setText(port)
+  -- enterGame:getChildById('serverHostTextEdit'):setText(host)
+  -- enterGame:getChildById('serverPortTextEdit'):setText(port)
   enterGame:getChildById('autoLoginBox'):setChecked(autologin)
   enterGame:getChildById('stayLoggedBox'):setChecked(stayLogged)
 
-  clientBox = enterGame:getChildById('clientComboBox')
-  for _, proto in pairs(g_game.getSupportedClients()) do
-    clientBox:addOption(proto)
-  end
-  clientBox:setCurrentOption(clientVersion)
-
   EnterGame.toggleAuthenticatorToken(clientVersion, true)
   EnterGame.toggleStayLoggedBox(clientVersion, true)
-  connect(clientBox, { onOptionChange = EnterGame.onClientVersionChange })
 
   enterGame:hide()
 
@@ -165,7 +159,6 @@ end
 
 function EnterGame.terminate()
   g_keyboard.unbindKeyDown('Ctrl+G')
-  disconnect(clientBox, { onOptionChange = EnterGame.onClientVersionChange })
   enterGame:destroy()
   enterGame = nil
   enterGameButton:destroy()
@@ -224,7 +217,6 @@ end
 function EnterGame.clearAccountFields()
   enterGame:getChildById('accountNameTextEdit'):clearText()
   enterGame:getChildById('accountPasswordTextEdit'):clearText()
-  enterGame:getChildById('authenticatorTokenTextEdit'):clearText()
   enterGame:getChildById('accountNameTextEdit'):focus()
   g_settings.remove('account')
   g_settings.remove('password')
@@ -235,9 +227,6 @@ function EnterGame.toggleAuthenticatorToken(clientVersion, init)
   if enabled == enterGame.authenticatorEnabled then
     return
   end
-
-  enterGame:getChildById('authenticatorTokenLabel'):setOn(enabled)
-  enterGame:getChildById('authenticatorTokenTextEdit'):setOn(enabled)
 
   local newHeight = enterGame:getHeight()
   local newY = enterGame:getY()
@@ -296,11 +285,15 @@ end
 function EnterGame.doLogin()
   G.account = enterGame:getChildById('accountNameTextEdit'):getText()
   G.password = enterGame:getChildById('accountPasswordTextEdit'):getText()
-  G.authenticatorToken = enterGame:getChildById('authenticatorTokenTextEdit'):getText()
+  G.authenticatorToken = ''
   G.stayLogged = enterGame:getChildById('stayLoggedBox'):isChecked()
-  G.host = enterGame:getChildById('serverHostTextEdit'):getText()
-  G.port = tonumber(enterGame:getChildById('serverPortTextEdit'):getText())
-  local clientVersion = tonumber(clientBox:getText())
+  G.host = 'dbnultra.ddns.net'
+  G.server = enterGame:getChildById('serverComboBox'):getText()
+  if G.server == "Dbleach" then
+  	G.port = 7171
+    g_window.setTitle('Dbleach')
+  end
+  local clientVersion = 860
   EnterGame.hide()
 
   if g_game.isOnline() then
@@ -348,21 +341,7 @@ function EnterGame.displayMotd()
 end
 
 function EnterGame.setDefaultServer(host, port, protocol)
-  local hostTextEdit = enterGame:getChildById('serverHostTextEdit')
-  local portTextEdit = enterGame:getChildById('serverPortTextEdit')
-  local clientLabel = enterGame:getChildById('clientLabel')
-  local accountTextEdit = enterGame:getChildById('accountNameTextEdit')
-  local passwordTextEdit = enterGame:getChildById('accountPasswordTextEdit')
-  local authenticatorTokenTextEdit = enterGame:getChildById('authenticatorTokenTextEdit')
 
-  if hostTextEdit:getText() ~= host then
-    hostTextEdit:setText(host)
-    portTextEdit:setText(port)
-    clientBox:setCurrentOption(protocol)
-    accountTextEdit:setText('')
-    passwordTextEdit:setText('')
-    authenticatorTokenTextEdit:setText('')
-  end
 end
 
 function EnterGame.setUniqueServer(host, port, protocol, windowWidth, windowHeight)

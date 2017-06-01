@@ -8,7 +8,6 @@ local errorBox
 local waitingWindow
 local updateWaitEvent
 local resendWaitEvent
-local loginEvent
 
 -- private functions
 local function tryLogin(charInfo, tries)
@@ -22,7 +21,7 @@ local function tryLogin(charInfo, tries)
     if tries == 1 then
       g_game.safeLogout()
     end
-    loginEvent = scheduleEvent(function() tryLogin(charInfo, tries+1) end, 100)
+    scheduleEvent(function() tryLogin(charInfo, tries+1) end, 100)
     return
   end
 
@@ -181,18 +180,13 @@ function CharacterList.terminate()
   end
 
   if updateWaitEvent then
-    removeEvent(updateWaitEvent)
+    updateWaitEvent:cancel()
     updateWaitEvent = nil
   end
 
   if resendWaitEvent then
-    removeEvent(resendWaitEvent)
+    resendWaitEvent:cancel()
     resendWaitEvent = nil
-  end
-
-  if loginEvent then
-    removeEvent(loginEvent)
-    loginEvent = nil
   end
 
   CharacterList = nil
@@ -316,10 +310,6 @@ function CharacterList.doLogin()
                        worldName = selected.worldName,
                        characterName = selected.characterName }
     charactersWindow:hide()
-    if loginEvent then
-      removeEvent(loginEvent)
-      loginEvent = nil
-    end
     tryLogin(charInfo)
   else
     displayErrorBox(tr('Error'), tr('You must select a character to login!'))
@@ -340,12 +330,12 @@ function CharacterList.cancelWait()
   end
 
   if updateWaitEvent then
-    removeEvent(updateWaitEvent)
-    updateWaitEvent = nil
+      updateWaitEvent:cancel()
+      updateWaitEvent = nil
   end
 
   if resendWaitEvent then
-    removeEvent(resendWaitEvent)
+    resendWaitEvent:cancel()
     resendWaitEvent = nil
   end
 
